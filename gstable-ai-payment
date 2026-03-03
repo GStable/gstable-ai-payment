@@ -1,0 +1,25 @@
+#!/usr/bin/env python3
+"""
+GStable AI Payment Skill - 统一入口
+
+使用方式:
+    # 直接运行
+    ./gstable-ai-payment get-link lnk_xxx
+    ./gstable-ai-payment create-session lnk_xxx --chain 137 --token USDC
+    ./gstable-ai-payment prepare sess_xxx --chain 137 --token 0x3c499c...
+    ./gstable-ai-payment wallet
+
+    # 或通过 uv
+    uv run gstable-ai-payment get-link lnk_xxx
+"""
+
+import sys
+import os
+
+# 确保 src 目录在 Python 路径中
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+
+from gstable_ai_payment.cli import cli
+
+if __name__ == "__main__":
+    cli()
