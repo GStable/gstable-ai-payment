@@ -72,6 +72,7 @@ def cmd_get_link(link_id: str) -> dict:
                 "chainId": t["chainId"],
                 "tokenAddress": t["tokenAddress"],
                 "amountInUSD": t["amountInUSD"],
+                "amountInToken": t["amountInToken"],  # 实际支付金额
             }
             for t in tokens
         ],
@@ -487,15 +488,17 @@ def cmd_pay(link_id: str, chain_id: str, token: str, email: str = None) -> dict:
     allowance_data = cmd_allowance(execution_chain_id, token_address, executor_contract)
     current_allowance = int(allowance_data["allowance"])
     
-    # 从支付链接获取需要的金额
+    # 从支付链接获取实际需要的金额
     required_amount = 0
     for t in link_data["supportedTokens"]:
         if t["tokenAddress"].lower() == token_address.lower() and t["chainId"] == chain_id:
-            # 假设 amountInToken 在 get_link 里有，这里用一个较大的值来确保授权足够
-            required_amount = MAX_UINT256  # 使用无限授权
+            required_amount = int(t["amountInToken"])  # 使用实际支付金额
             break
     
-    if current_allowance < required_amount:
+    # 留 10% 余量以防万一
+    required_with_buffer = int(required_amount * 1.1)
+    
+    if current_allowance < required_with_buffer:
         print(f"\n授权不足，正在授权 Token...")
         approve_result = cmd_approve(execution_chain_id, token_address, executor_contract)
         
