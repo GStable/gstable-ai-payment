@@ -1,24 +1,24 @@
 ---
 name: gstable-ai-payment
-description: "GStable AI Payment Protocol - 使 AI Agent 能够代表用户发现、协商并执行加密货币支付"
+description: "GStable AI Payment Protocol - enables AI Agents to discover, negotiate, and execute cryptocurrency payments on behalf of users"
 metadata: {"openclaw":{"emoji":"💰","homepage":"https://docs.gstable.io/zh-Hans/docs/category/ai-payment-protocol","primaryEnv":"WALLET_PRIVATE_KEY","requires":{"bins":["gstable-ai-payment"],"env":["WALLET_PRIVATE_KEY"]},"install":[{"id":"uv-install","kind":"shell","command":"uv sync","bins":["gstable-ai-payment"],"label":"Install gstable-ai-payment CLI (uv)"}]},"clawdbot":{"emoji":"💰","homepage":"https://docs.gstable.io/zh-Hans/docs/category/ai-payment-protocol","primaryEnv":"WALLET_PRIVATE_KEY","requires":{"bins":["gstable-ai-payment"],"env":["WALLET_PRIVATE_KEY"]},"install":[{"id":"uv-install","kind":"shell","command":"uv sync","bins":["gstable-ai-payment"],"label":"Install gstable-ai-payment CLI (uv)"}]}}
 ---
 
 # GStable AI Payment Skill
 
-使 AI Agent 能够代表用户发现、协商并执行加密货币支付的 OpenClaw Skill。
+An OpenClaw skill that enables AI Agents to discover, negotiate, and execute cryptocurrency payments on behalf of users.
 
 ## Features
 
-- 🔗 获取支付链接详情和支持的代币
-- 📝 创建支付会话（EIP-712 签名）
-- 🔍 查询支付会话状态
-- 💳 准备支付并生成区块链交易 calldata
-- ✅ 检查并自动授权 Token (approve)
-- ⚡ 执行链上支付交易
-- 🚀 一键支付（pay 命令，自动处理授权）
-- 🔐 安全的 EIP-712 签名（私钥存储在环境变量中）
-- ⛓️ 支持多链（Polygon、Ethereum、Arbitrum、Base）
+- 🔗 Retrieve payment link details and supported tokens
+- 📝 Create payment sessions (EIP-712 signatures)
+- 🔍 Query payment session status
+- 💳 Prepare payments and generate on-chain transaction calldata
+- ✅ Check and automatically approve tokens
+- ⚡ Execute on-chain payment transactions
+- 🚀 One-command payment (`pay`) with automatic approval handling
+- 🔐 Secure EIP-712 signing (private key stored in environment variables)
+- ⛓️ Multi-chain support (Polygon, Ethereum, Arbitrum, Base)
 
 ## Installation
 
@@ -30,44 +30,44 @@ uv sync
 
 ## Configuration
 
-设置环境变量：
+Set environment variables:
 
 ```bash
-# 必需：用于签名 EIP-712 消息的钱包私钥
+# Required: wallet private key used to sign EIP-712 messages and send transactions
 export WALLET_PRIVATE_KEY=0x...your_private_key_here...
 
-# 可选：GStable API 基础 URL（默认: https://aipay.gstable.io/api/v1）
+# Optional: GStable API base URL (default: https://aipay.gstable.io/api/v1)
 export GSTABLE_API_BASE_URL=https://aipay.gstable.io/api/v1
 
-# 可选：默认支付者邮箱
+# Optional: default payer email
 export DEFAULT_PAYER_EMAIL=user@example.com
 ```
 
-⚠️ **安全提示**: 永远不要将私钥提交到版本控制系统！
+⚠️ **Security note**: Never commit private keys to version control.
 
 ## Quick Start
 
-### 1. 获取支付链接详情
+### 1. Get payment link details
 
 ```bash
-# 支付链接格式:
+# Payment link formats:
 # - https://pay.gstable.io/link/<link_id>
 # - https://aipay.gstable.io/api/v1/payment/link/<link_id>
 
-# 示例 1
+# Example 1
 uv run scripts/gstable-ai-payment.py get_link lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua
 
-# 示例 2
+# Example 2
 uv run scripts/gstable-ai-payment.py get_link lnk_QTAfGfyqAZHGSm9NKLhtjNYu8dNHRpGh
 ```
 
-### 2. 创建支付会话
+### 2. Create payment session
 
 ```bash
 uv run scripts/gstable-ai-payment.py create_session lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua 137 USDC
 ```
 
-### 3. 一键支付（推荐）
+### 3. One-command payment (recommended)
 
 ```bash
 uv run scripts/gstable-ai-payment.py pay lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua 137 USDC user@example.com
@@ -76,209 +76,163 @@ uv run scripts/gstable-ai-payment.py pay lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua 13
 ## All Commands
 
 ```bash
-# 获取支付链接详情
+# Get payment link details
 uv run scripts/gstable-ai-payment.py get_link <link_id>
 
-# 创建支付会话
+# Create payment session
 uv run scripts/gstable-ai-payment.py create_session <link_id> <chain_id> <token> [payer]
 uv run scripts/gstable-ai-payment.py create_session lnk_xxx 137 USDC
 uv run scripts/gstable-ai-payment.py create_session lnk_xxx 137 0x3c499c542cef5e3811e1192ce70d8cc03d5c3359
 
-# 获取会话状态
+# Get session status
 uv run scripts/gstable-ai-payment.py get_session <session_id>
 
-# 准备支付（生成 calldata）
+# Prepare payment (generate calldata)
 uv run scripts/gstable-ai-payment.py prepare <session_id> <chain_id> <token_address> [email]
 
-# 执行链上交易
+# Execute on-chain transaction
 uv run scripts/gstable-ai-payment.py execute <chain_id> <to_address> <calldata>
 
-# 检查 Token 授权额度
+# Check token allowance
 uv run scripts/gstable-ai-payment.py allowance <chain_id> <token_address> <spender>
 
-# 授权 Token 给支付合约
+# Approve token for payment contract
 uv run scripts/gstable-ai-payment.py approve <chain_id> <token_address> <spender> [amount]
 
-# 一键支付（完整流程，自动处理授权）
+# One-command payment (full flow, automatic approval)
 uv run scripts/gstable-ai-payment.py pay <link_id> <chain_id> <token> [email]
 
-# 查看钱包地址
+# Show wallet address
 uv run scripts/gstable-ai-payment.py wallet
 ```
 
 ## Supported Chains
 
-| Chain | Chain ID | 代币 |
+| Chain | Chain ID | Tokens |
 |-------|----------|------|
 | Polygon | 137 | USDC, USDT |
 | Ethereum | 1 | USDC, USDT |
 | Arbitrum | 42161 | USDC |
 | Base | 8453 | USDC |
 
-使用 `uv run scripts/gstable-ai-payment.py get_link <link-id>` 查看具体支付链接支持的链和代币。
+Use `uv run scripts/gstable-ai-payment.py get_link <link-id>` to see exactly which chains and tokens are supported for a specific payment link.
 
 ## Usage Examples
 
-### 完整支付流程
+### Complete payment flow
 
 ```bash
-# 支付链接: https://pay.gstable.io/link/lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua
+# Payment link: https://pay.gstable.io/link/lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua
 
-# 方式一：一键支付（推荐）
+# Option 1: one-command payment (recommended)
 uv run scripts/gstable-ai-payment.py pay lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua 137 USDC user@example.com
 
-# 输出:
-# Step 1/5: 获取支付链接详情...
-# Step 2/5: 创建支付会话...
-# Step 3/5: 准备支付...
-# Step 4/5: 检查 Token 授权...
-# Step 5/5: 执行链上支付交易...
-# ✅ 支付完成！
+# Output:
+# Step 1/5: Getting payment link details...
+# Step 2/5: Creating payment session...
+# Step 3/5: Preparing payment...
+# Step 4/5: Checking token allowance...
+# Step 5/5: Executing on-chain payment transaction...
+# ✅ Payment completed!
 # { "linkId": "lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua", "sessionId": "sess_xxx", "txHash": "0x..." }
 
-# 方式二：分步执行
-# 1. 查看支付链接详情
+# Option 2: run step by step
+# 1) Get payment link details
 uv run scripts/gstable-ai-payment.py get_link lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua
-# 输出 JSON 格式的支付链接详情
+# Returns payment link details in JSON format
 
-# 2. 创建支付会话
+# 2) Create payment session
 uv run scripts/gstable-ai-payment.py create_session lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua 137 USDC
-# 输出: { "sessionId": "sess_abc123", ... }
+# Output: { "sessionId": "sess_abc123", ... }
 
-# 3. 准备支付
+# 3) Prepare payment
 uv run scripts/gstable-ai-payment.py prepare sess_abc123 137 0x3c499c542cef5e3811e1192ce70d8cc03d5c3359 user@example.com
-# 输出: { "executionChainId": "137", "executorContract": "0x...", "calldata": "0x..." }
+# Output: { "executionChainId": "137", "executorContract": "0x...", "calldata": "0x..." }
 
-# 4. 检查并执行授权（如果需要）
+# 4) Check and approve allowance (if needed)
 uv run scripts/gstable-ai-payment.py allowance 137 0x3c499c542cef5e3811e1192ce70d8cc03d5c3359 0x...
 uv run scripts/gstable-ai-payment.py approve 137 0x3c499c542cef5e3811e1192ce70d8cc03d5c3359 0x...
 
-# 5. 执行链上交易
+# 5) Execute on-chain transaction
 uv run scripts/gstable-ai-payment.py execute 137 0x... 0x...
-# 输出: { "status": "submitted", "txHash": "0x..." }
+# Output: { "status": "submitted", "txHash": "0x..." }
 ```
 
-### Agent 使用示例
+### Agent interaction example
 
 ```
-User: "我想支付这个：https://pay.gstable.io/link/lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua"
+User: "I want to pay this: https://pay.gstable.io/link/lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua"
 
 Agent: [uv run scripts/gstable-ai-payment.py get_link lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua]
-       "这是一个支付链接。您可以使用 Polygon 上的 USDC 支付。请问您想用哪个网络？"
+       "This is a payment link. You can pay with USDC on Polygon. Which network would you like to use?"
 
-User: "用 Polygon"
+User: "Use Polygon"
 
 Agent: [uv run scripts/gstable-ai-payment.py pay lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua 137 USDC]
-       "✅ 支付完成！交易哈希：0x..."
+       "✅ Payment completed! Transaction hash: 0x..."
 ```
 
 ## Payment Flow
 
 ```
 ┌─────────────────┐
-│  用户分享链接   │
+│ User shares link│
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│    get_link     │ ──► 获取商品和支付选项
+│    get_link     │ ──► Get product and payment options
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│  用户选择代币   │
+│ User picks token│
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│ create_session  │ ──► 创建会话 (EIP-712 签名)
+│ create_session  │ ──► Create session (EIP-712 signature)
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│    prepare      │ ──► 获取交易 calldata (EIP-712 签名)
+│    prepare      │ ──► Get transaction calldata (EIP-712 signature)
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│   allowance     │ ──► 检查 Token 授权额度
+│   allowance     │ ──► Check token allowance
 └────────┬────────┘
          │
-         ▼ (如果授权不足)
+         ▼ (if insufficient)
 ┌─────────────────┐
-│    approve      │ ──► 授权 Token 给支付合约
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│    execute      │ ──► 发送链上交易
+│    approve      │ ──► Approve token for payment contract
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│   ✅ 支付完成   │
+│    execute      │ ──► Send on-chain transaction
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ ✅ Payment done │
 └─────────────────┘
 
-或使用 pay 命令一键完成全部流程
+Or use the `pay` command to complete everything in one step.
 ```
 
 ## Environment Variables
-.py get_session <session_id>
 
-# 准备支付（生成 calldata）
-uv run scripts/gstable-ai-payment.py prepare <session_id> <chain_id> <token_address> [email]
-
-# 执行链上交易
-uv run scripts/gstable-ai-payment.py execute <chain_id> <to_address> <calldata>
-
-# 检查 Token 授权额度
-uv run scripts/gstable-ai-payment.py allowance <chain_id> <token_address> <spender>
-
-# 授权 Token 给支付合约
-uv run scripts/gstable-ai-payment.py approve <chain_id> <token_address> <spender> [amount]
-
-# 一键支付（完整流程，自动处理授权）
-uv run scripts/gstable-ai-payment.py pay <link_id> <chain_id> <token> [email]
-
-# 查看钱包地址
-uv run scripts/gstable-ai-payment.py wallet
-```
-
-## Supported Chains
-
-| Chain | Chain ID | 代币 |
-|-------|----------|------|
-| Polygon | 137 | USDC, USDT |
-| Ethereum | 1 | USDC, USDT |
-| Arbitrum | 42161 | USDC |
-| Base | 8453 | USDC |
-
-使用 `uv run scripts/gstable-ai-payment.py get_link <link-id>` 查看具体支付链接支持的链和代币。
-
-## Usage Examples
-
-### 完整支付流程
-
-```bash
-# 支付链接: https://pay.gstable.io/link/lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua
-
-# 方式一：一键支付（推荐）
-uv run scripts/gstable-ai-payment.py pay lnk_BUDBgiGTWejFs8v0FbdpR3iJ83CG1tua 137 USDC user@example.com
-
-# 输出:
-# Step 1/5: 获取支付链接详情...
-# Step 2/5: 创建支付会话...
-# Step 3/5: 准备支付...
-# Step 4/5: 检查 Token 授权...
-| 变量 | 必需 | 描述 |
+| Variable | Required | Description |
 |------|------|------|
-| `WALLET_PRIVATE_KEY` | ✅ | 用于签名 EIP-712 消息和执行交易的钱包私钥（0x 开头） |
-| `GSTABLE_API_BASE_URL` | ❌ | GStable API 基础 URL（默认: https://aipay.gstable.io/api/v1） |
-| `DEFAULT_PAYER_EMAIL` | ❌ | 默认支付者邮箱 |
-| `RPC_URL_137` | ❌ | Polygon RPC URL（默认: https://polygon-rpc.com） |
-| `RPC_URL_1` | ❌ | Ethereum RPC URL（默认: https://eth.llamarpc.com） |
-| `RPC_URL_42161` | ❌ | Arbitrum RPC URL（默认: https://arb1.arbitrum.io/rpc） |
-| `RPC_URL_8453` | ❌ | Base RPC URL（默认: https://mainnet.base.org） |
+| `WALLET_PRIVATE_KEY` | ✅ | Wallet private key used to sign EIP-712 messages and execute transactions (`0x` prefix) |
+| `GSTABLE_API_BASE_URL` | ❌ | GStable API base URL (default: https://aipay.gstable.io/api/v1) |
+| `DEFAULT_PAYER_EMAIL` | ❌ | Default payer email |
+| `RPC_URL_137` | ❌ | Polygon RPC URL (default: https://polygon-rpc.com) |
+| `RPC_URL_1` | ❌ | Ethereum RPC URL (default: https://eth.llamarpc.com) |
+| `RPC_URL_42161` | ❌ | Arbitrum RPC URL (default: https://arb1.arbitrum.io/rpc) |
+| `RPC_URL_8453` | ❌ | Base RPC URL (default: https://mainnet.base.org) |
 
 ## Troubleshooting
 
@@ -289,26 +243,26 @@ export WALLET_PRIVATE_KEY=0x...
 
 **"Token not supported"**
 ```bash
-# 先查看支持的代币
+# Check supported tokens first
 uv run scripts/gstable-ai-payment.py get_link <link_id>
 ```
 
 **"Session expired"**
 ```bash
-# 重新创建会话
+# Recreate session
 uv run scripts/gstable-ai-payment.py create_session <link_id> <chain_id> <token>
 ```
 
 **"No RPC URL configured for chain"**
 ```bash
-# 设置对应链的 RPC URL
+# Set RPC URL for the corresponding chain
 export RPC_URL_137=https://polygon-rpc.com
 ```
 
-**"Gas estimation failed" 或 "Transaction failed"**
-- 确保钱包有足够的原生代币（如 MATIC）支付 gas 费
-- 确保钱包有足够的 token 余额完成支付
-- 检查 token 是否已授权给支付合约
+**"Gas estimation failed" or "Transaction failed"**
+- Ensure the wallet has enough native token (e.g., MATIC) to pay gas fees
+- Ensure the wallet has enough token balance to complete the payment
+- Check whether the token has been approved for the payment contract
 
 ## Resources
 

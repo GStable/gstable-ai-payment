@@ -1,32 +1,32 @@
 #!/usr/bin/env python3
 """
-GStable AI Payment Skill - 统一入口
+GStable AI Payment Skill - Unified Entry Point
 
-使用方式:
-    # 直接运行
+Usage:
+    # Run directly
     uv run python scripts/gstable-ai-payment.py get_link lnk_xxx
     uv run python scripts/gstable-ai-payment.py create_session lnk_xxx 137 USDC
     uv run python scripts/gstable-ai-payment.py prepare sess_xxx 137 0x3c499c...
     uv run python scripts/gstable-ai-payment.py execute 137 0x614C7B... 0x93fec3f7...
     uv run python scripts/gstable-ai-payment.py wallet
 
-支持的命令:
-    get_link <link_id>                                  获取支付链接详情
-    create_session <link_id> <chain_id> <token>         创建支付会话
-    get_session <session_id>                            获取会话状态
-    prepare <session_id> <chain_id> <token> [email]     准备支付
-    execute <chain_id> <to_address> <calldata>          执行链上支付交易
-    allowance <chain_id> <token> <spender>              检查 token 授权额度
-    approve <chain_id> <token> <spender> [amount]       授权 token 给支付合约
-    pay <link_id> <chain_id> <token> [email]            一键支付（完整流程）
-    wallet                                              显示钱包地址
+Supported commands:
+    get_link <link_id>                                  Get payment link details
+    create_session <link_id> <chain_id> <token>         Create payment session
+    get_session <session_id>                            Get session status
+    prepare <session_id> <chain_id> <token> [email]     Prepare payment
+    execute <chain_id> <to_address> <calldata>          Execute on-chain payment transaction
+    allowance <chain_id> <token> <spender>              Check token allowance
+    approve <chain_id> <token> <spender> [amount]       Approve token for payment contract
+    pay <link_id> <chain_id> <token> [email]            One-command payment (full flow)
+    wallet                                              Show wallet address
 """
 
 import sys
 import os
 import json
 
-# 确保当前目录在 Python 路径中
+# Ensure current directory is in the Python path
 sys.path.insert(0, os.path.dirname(__file__))
 
 from config import get_config
@@ -46,7 +46,7 @@ from api import (
 
 
 def cmd_get_link(link_id: str) -> dict:
-    """获取支付链接详情"""
+    """Get payment link details"""
     link_data = get_payment_link_sync(link_id)
     
     tokens = link_data["aiView"]["supportedPaymentTokens"]
@@ -72,7 +72,7 @@ def cmd_get_link(link_id: str) -> dict:
                 "chainId": t["chainId"],
                 "tokenAddress": t["tokenAddress"],
                 "amountInUSD": t["amountInUSD"],
-                "amountInToken": t["amountInToken"],  # 实际支付金额
+                "amountInToken": t["amountInToken"],  # Actual payment amount
             }
             for t in tokens
         ],
@@ -83,10 +83,10 @@ def cmd_get_link(link_id: str) -> dict:
 
 
 def cmd_create_session(link_id: str, chain_id: str, token: str, payer: str = None) -> dict:
-    """创建支付会话"""
+    """Create payment session"""
     link_data = get_payment_link_sync(link_id)
     
-    # 查找匹配的代币
+    # Find matching token
     selected_token = None
     for t in link_data["aiView"]["supportedPaymentTokens"]:
         if t["chainId"] == chain_id and (
@@ -132,7 +132,7 @@ def cmd_create_session(link_id: str, chain_id: str, token: str, payer: str = Non
 
 
 def cmd_get_session(session_id: str) -> dict:
-    """获取会话状态"""
+    """Get session status"""
     session_data = get_payment_session_sync(session_id)
     
     workflow = session_data["aiView"]["workflow"]
@@ -150,7 +150,7 @@ def cmd_get_session(session_id: str) -> dict:
 
 
 def cmd_prepare(session_id: str, chain_id: str, token: str, email: str = None) -> dict:
-    """准备支付"""
+    """Prepare payment"""
     session_data = get_payment_session_sync(session_id)
     merchant_id = session_data.get("merchantId")
     
@@ -192,7 +192,7 @@ def cmd_prepare(session_id: str, chain_id: str, token: str, email: str = None) -
 
 
 def cmd_wallet() -> dict:
-    """显示钱包地址"""
+    """Show wallet address"""
     address = get_wallet_address()
     result = {"address": address}
     print(json.dumps(result, indent=2, ensure_ascii=False))
@@ -200,21 +200,21 @@ def cmd_wallet() -> dict:
 
 
 def cmd_execute(chain_id: str, to_address: str, calldata: str) -> dict:
-    """执行链上支付交易"""
+    """Execute on-chain payment transaction"""
     from eth_account import Account
     import httpx
     
     config = get_config()
     
-    # 获取 RPC URL
+    # Get RPC URL
     rpc_url = config.rpc_urls.get(chain_id)
     if not rpc_url:
         raise Exception(f"No RPC URL configured for chain {chain_id}. Set RPC_URL_{chain_id} env var.")
     
-    # 创建账户
+    # Create account
     account = Account.from_key(config.wallet_private_key)
     
-    # 获取 nonce
+    # Get nonce
     with httpx.Client() as client:
         # Get nonce
         resp = client.post(rpc_url, json={
@@ -251,21 +251,21 @@ def cmd_execute(chain_id: str, to_address: str, calldata: str) -> dict:
             raise Exception(f"Gas estimation failed: {gas_result['error']}")
         gas_limit = int(gas_result["result"], 16)
         
-        # 构建交易
+        # Build transaction
         tx = {
             "nonce": nonce,
             "gasPrice": gas_price,
-            "gas": int(gas_limit * 1.2),  # 增加 20% buffer
+            "gas": int(gas_limit * 1.2),  # Add 20% buffer
             "to": to_address,
             "value": 0,
             "data": bytes.fromhex(calldata[2:]) if calldata.startswith("0x") else bytes.fromhex(calldata),
             "chainId": int(chain_id),
         }
         
-        # 签名交易
+        # Sign transaction
         signed_tx = account.sign_transaction(tx)
         
-        # 发送交易
+        # Send transaction
         resp = client.post(rpc_url, json={
             "jsonrpc": "2.0",
             "method": "eth_sendRawTransaction",
@@ -300,7 +300,7 @@ MAX_UINT256 = 2**256 - 1
 
 
 def cmd_allowance(chain_id: str, token_address: str, spender: str) -> dict:
-    """检查 token 授权额度"""
+    """Check token allowance"""
     import httpx
     
     config = get_config()
@@ -346,7 +346,7 @@ def cmd_allowance(chain_id: str, token_address: str, spender: str) -> dict:
 
 
 def cmd_approve(chain_id: str, token_address: str, spender: str, amount: str = None) -> dict:
-    """授权 token 给支付合约"""
+    """Approve token for payment contract"""
     from eth_account import Account
     import httpx
     
@@ -357,7 +357,7 @@ def cmd_approve(chain_id: str, token_address: str, spender: str, amount: str = N
     
     account = Account.from_key(config.wallet_private_key)
     
-    # 使用传入的 amount 或者使用最大值（无限授权）
+    # Use provided amount or default to max value (infinite approval)
     if amount:
         approve_amount = int(amount)
     else:
@@ -444,7 +444,7 @@ def cmd_approve(chain_id: str, token_address: str, spender: str, amount: str = N
 
 
 def _wait_for_tx(rpc_url: str, tx_hash: str, timeout: int = 60) -> bool:
-    """等待交易确认"""
+    """Wait for transaction confirmation"""
     import httpx
     import time
     
@@ -466,59 +466,59 @@ def _wait_for_tx(rpc_url: str, tx_hash: str, timeout: int = 60) -> bool:
 
 
 def cmd_pay(link_id: str, chain_id: str, token: str, email: str = None) -> dict:
-    """一键支付 - 完整流程（含自动授权）（含自动授权）"""
+    """One-command payment - full flow (with automatic approval)"""
     config = get_config()
     
-    print("Step 1/5: 获取支付链接详情...")
+    print("Step 1/5: Getting payment link details...")
     link_data = cmd_get_link(link_id)
     
-    print("\nStep 2/5: 创建支付会话...")
+    print("\nStep 2/5: Creating payment session...")
     session_data = cmd_create_session(link_id, chain_id, token)
     session_id = session_data["sessionId"]
     token_address = session_data["tokenAddress"]
     
-    print("\nStep 3/5: 准备支付...")
+    print("\nStep 3/5: Preparing payment...")
     prepare_data = cmd_prepare(session_id, chain_id, token_address, email)
     
     executor_contract = prepare_data["executorContract"]
     execution_chain_id = prepare_data["executionChainId"]
     
-    # Step 4: 检查并执行 approve（如果需要）
-    print("\nStep 4/5: 检查 Token 授权...")
+    # Step 4: Check and execute approve (if needed)
+    print("\nStep 4/5: Checking token allowance...")
     allowance_data = cmd_allowance(execution_chain_id, token_address, executor_contract)
     current_allowance = int(allowance_data["allowance"])
     
-    # 从支付链接获取实际需要的金额
+    # Get the actual required amount from the payment link
     required_amount = 0
     for t in link_data["supportedTokens"]:
         if t["tokenAddress"].lower() == token_address.lower() and t["chainId"] == chain_id:
-            required_amount = int(t["amountInToken"])  # 使用实际支付金额
+            required_amount = int(t["amountInToken"])  # Use actual payment amount
             break
     
-    # 留 10% 余量以防万一
+    # Keep 10% headroom just in case
     required_with_buffer = int(required_amount * 1.1)
     
     if current_allowance < required_with_buffer:
-        print(f"\n授权不足，正在授权 Token...")
+        print(f"\nInsufficient allowance. Approving token...")
         approve_result = cmd_approve(execution_chain_id, token_address, executor_contract)
         
-        # 等待授权交易确认
+        # Wait for approval transaction confirmation
         rpc_url = config.rpc_urls.get(execution_chain_id)
-        print("等待授权交易确认...")
+        print("Waiting for approval transaction confirmation...")
         if not _wait_for_tx(rpc_url, approve_result["txHash"]):
             raise Exception("Approve transaction failed or timed out")
-        print("✅ 授权成功！")
+        print("✅ Approval successful!")
     else:
-        print("✅ Token 已授权")
+        print("✅ Token is already approved")
     
-    print("\nStep 5/5: 执行链上支付交易...")
+    print("\nStep 5/5: Executing on-chain payment transaction...")
     execute_result = cmd_execute(
         execution_chain_id,
         executor_contract,
         prepare_data["calldata"],
     )
     
-    print("\n✅ 支付完成！")
+    print("\n✅ Payment completed!")
     return {
         "linkId": link_id,
         "sessionId": session_id,

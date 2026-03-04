@@ -19,7 +19,7 @@ class Config:
     rpc_urls: dict  # chain_id -> rpc_url
 
 
-# 默认 RPC URLs
+# Default RPC URLs
 DEFAULT_RPC_URLS = {
     "137": "https://polygon-bor.publicnode.com",
     "1": "https://eth.llamarpc.com",
@@ -58,7 +58,7 @@ def load_config() -> Config:
         default_payer_email=os.environ.get("DEFAULT_PAYER_EMAIL", "ai-agent@example.com"),
         rpc_urls={
             **DEFAULT_RPC_URLS,
-            # 可以通过环境变量覆盖
+            # Can be overridden via environment variables
             **({k.replace("RPC_URL_", ""): v for k, v in os.environ.items() if k.startswith("RPC_URL_")}),
         },
     )
