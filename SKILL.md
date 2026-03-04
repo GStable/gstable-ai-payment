@@ -1,7 +1,7 @@
 ---
 name: gstable-ai-payment
 description: "GStable AI Payment Protocol - enables AI Agents to discover, negotiate, and execute cryptocurrency payments on behalf of users"
-metadata: {"openclaw":{"emoji":"💰","homepage":"https://docs.gstable.io/zh-Hans/docs/category/ai-payment-protocol","primaryEnv":"WALLET_PRIVATE_KEY","requires":{"bins":["gstable-ai-payment"],"env":["WALLET_PRIVATE_KEY"]},"install":[{"id":"uv-install","kind":"shell","command":"uv sync","bins":["gstable-ai-payment"],"label":"Install gstable-ai-payment CLI (uv)"}]},"clawdbot":{"emoji":"💰","homepage":"https://docs.gstable.io/zh-Hans/docs/category/ai-payment-protocol","primaryEnv":"WALLET_PRIVATE_KEY","requires":{"bins":["gstable-ai-payment"],"env":["WALLET_PRIVATE_KEY"]},"install":[{"id":"uv-install","kind":"shell","command":"uv sync","bins":["gstable-ai-payment"],"label":"Install gstable-ai-payment CLI (uv)"}]}}
+metadata: {"openclaw":{"emoji":"💰","homepage":"https://docs.gstable.io/zh-Hans/docs/category/ai-payment-protocol","primaryEnv":"WALLET_PRIVATE_KEY","requires":{"env":["WALLET_PRIVATE_KEY"]},"install":[{"id":"uv-install","kind":"shell","command":"uv sync","label":"Install gstable-ai-payment CLI (uv)"}]},"clawdbot":{"emoji":"💰","homepage":"https://docs.gstable.io/zh-Hans/docs/category/ai-payment-protocol","primaryEnv":"WALLET_PRIVATE_KEY","requires":{"env":["WALLET_PRIVATE_KEY"]},"install":[{"id":"uv-install","kind":"shell","command":"uv sync","label":"Install gstable-ai-payment CLI (uv)"}]}}
 ---
 
 # GStable AI Payment Skill
@@ -13,6 +13,7 @@ An OpenClaw skill that enables AI Agents to discover, negotiate, and execute cry
 - 🔗 Retrieve payment link details and supported tokens
 - 📝 Create payment sessions (EIP-712 signatures)
 - 🔍 Query payment session status
+- 💰 Check native and ERC20 balances
 - 💳 Prepare payments and generate on-chain transaction calldata
 - ✅ Check and automatically approve tokens
 - ⚡ Execute on-chain payment transactions
@@ -86,6 +87,9 @@ uv run scripts/gstable-ai-payment.py create_session lnk_xxx 137 0x3c499c542cef5e
 
 # Get session status
 uv run scripts/gstable-ai-payment.py get_session <session_id>
+
+# Check native/ERC20 balance
+uv run scripts/gstable-ai-payment.py balance <chain_id> [token_address] [wallet]
 
 # Prepare payment (generate calldata)
 uv run scripts/gstable-ai-payment.py prepare <session_id> <chain_id> <token_address> [email]
@@ -229,10 +233,10 @@ Or use the `pay` command to complete everything in one step.
 | `WALLET_PRIVATE_KEY` | ✅ | Wallet private key used to sign EIP-712 messages and execute transactions (`0x` prefix) |
 | `GSTABLE_API_BASE_URL` | ❌ | GStable API base URL (default: https://aipay.gstable.io/api/v1) |
 | `DEFAULT_PAYER_EMAIL` | ❌ | Default payer email |
-| `RPC_URL_137` | ❌ | Polygon RPC URL (default: https://polygon-rpc.com) |
-| `RPC_URL_1` | ❌ | Ethereum RPC URL (default: https://eth.llamarpc.com) |
-| `RPC_URL_42161` | ❌ | Arbitrum RPC URL (default: https://arb1.arbitrum.io/rpc) |
-| `RPC_URL_8453` | ❌ | Base RPC URL (default: https://mainnet.base.org) |
+| `RPC_URL_POLYGON` | ❌ | Polygon RPC URL (default: https://polygon-rpc.com) |
+| `RPC_URL_ETHEREUM` | ❌ | Ethereum RPC URL (default: https://eth.llamarpc.com) |
+| `RPC_URL_ARBITRUM` | ❌ | Arbitrum RPC URL (default: https://arb1.arbitrum.io/rpc) |
+| `RPC_URL_BASE` | ❌ | Base RPC URL (default: https://mainnet.base.org) |
 
 ## Troubleshooting
 
@@ -256,7 +260,7 @@ uv run scripts/gstable-ai-payment.py create_session <link_id> <chain_id> <token>
 **"No RPC URL configured for chain"**
 ```bash
 # Set RPC URL for the corresponding chain
-export RPC_URL_137=https://polygon-rpc.com
+export RPC_URL_POLYGON=https://polygon-rpc.com
 ```
 
 **"Gas estimation failed" or "Transaction failed"**

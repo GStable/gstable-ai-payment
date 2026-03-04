@@ -27,6 +27,13 @@ DEFAULT_RPC_URLS = {
     "8453": "https://mainnet.base.org",
 }
 
+CHAIN_ID_TO_ENV_NAME = {
+    "137": "POLYGON",
+    "1": "ETHEREUM",
+    "42161": "ARBITRUM",
+    "8453": "BASE",
+}
+
 
 def load_config() -> Config:
     """
@@ -52,15 +59,25 @@ def load_config() -> Config:
             "WALLET_PRIVATE_KEY must be a valid hex string starting with 0x (66 characters total)."
         )
     
+    rpc_urls = {**DEFAULT_RPC_URLS}
+
+    # Preferred format: chain-name based RPC env vars, e.g. RPC_URL_POLYGON
+    for chain_id, chain_name in CHAIN_ID_TO_ENV_NAME.items():
+        env_key = f"RPC_URL_{chain_name}"
+        if os.environ.get(env_key):
+            rpc_urls[chain_id] = os.environ[env_key]
+
+    # Backward compatibility: allow numeric env vars, e.g. RPC_URL_137
+    for chain_id in CHAIN_ID_TO_ENV_NAME.keys():
+        legacy_env_key = f"RPC_URL_{chain_id}"
+        if os.environ.get(legacy_env_key):
+            rpc_urls[chain_id] = os.environ[legacy_env_key]
+
     return Config(
         wallet_private_key=wallet_private_key,
         api_base_url=os.environ.get("GSTABLE_API_BASE_URL", "https://aipay.gstable.io/api/v1"),
         default_payer_email=os.environ.get("DEFAULT_PAYER_EMAIL", "ai-agent@example.com"),
-        rpc_urls={
-            **DEFAULT_RPC_URLS,
-            # Can be overridden via environment variables
-            **({k.replace("RPC_URL_", ""): v for k, v in os.environ.items() if k.startswith("RPC_URL_")}),
-        },
+        rpc_urls=rpc_urls,
     )
 
 

@@ -15,6 +15,7 @@ Supported commands:
     create_session <link_id> <chain_id> <token>         Create payment session
     get_session <session_id>                            Get session status
     prepare <session_id> <chain_id> <token> [email]     Prepare payment
+    balance <chain_id> [token_address] [wallet]         Check native/ERC20 balance
     execute <chain_id> <to_address> <calldata>          Execute on-chain payment transaction
     allowance <chain_id> <token> <spender>              Check token allowance
     approve <chain_id> <token> <spender> [amount]       Approve token for payment contract
@@ -209,7 +210,12 @@ def cmd_execute(chain_id: str, to_address: str, calldata: str) -> dict:
     # Get RPC URL
     rpc_url = config.rpc_urls.get(chain_id)
     if not rpc_url:
-        raise Exception(f"No RPC URL configured for chain {chain_id}. Set RPC_URL_{chain_id} env var.")
+        raise Exception(
+            f"No RPC URL configured for chain {chain_id}. "
+            "Set chain-name env vars (preferred): "
+            "RPC_URL_POLYGON / RPC_URL_ETHEREUM / RPC_URL_ARBITRUM / RPC_URL_BASE. "
+            f"Legacy RPC_URL_{chain_id} is also supported."
+        )
     
     # Create account
     account = Account.from_key(config.wallet_private_key)
@@ -294,9 +300,83 @@ def cmd_execute(chain_id: str, to_address: str, calldata: str) -> dict:
 
 
 # ERC20 ABI fragments
+ERC20_BALANCE_OF_SIG = "0x70a08231"  # balanceOf(address)
 ERC20_ALLOWANCE_SIG = "0xdd62ed3e"  # allowance(address,address)
 ERC20_APPROVE_SIG = "0x095ea7b3"    # approve(address,uint256)
 MAX_UINT256 = 2**256 - 1
+
+
+def cmd_balance(chain_id: str, token_address: str = None, wallet: str = None) -> dict:
+    """Check native or ERC20 token balance"""
+    import httpx
+
+    config = get_config()
+    rpc_url = config.rpc_urls.get(chain_id)
+    if not rpc_url:
+        raise Exception(
+            f"No RPC URL configured for chain {chain_id}. "
+            "Set chain-name env vars (preferred): "
+            "RPC_URL_POLYGON / RPC_URL_ETHEREUM / RPC_URL_ARBITRUM / RPC_URL_BASE. "
+            f"Legacy RPC_URL_{chain_id} is also supported."
+        )
+
+    target_wallet = wallet or get_wallet_address()
+
+    with httpx.Client() as client:
+        if token_address:
+            # ERC20 balanceOf(wallet)
+            owner_padded = target_wallet[2:].lower().zfill(64)
+            calldata = ERC20_BALANCE_OF_SIG + owner_padded
+
+            resp = client.post(rpc_url, json={
+                "jsonrpc": "2.0",
+                "method": "eth_call",
+                "params": [{
+                    "to": token_address,
+                    "data": calldata,
+                }, "latest"],
+                "id": 1,
+            })
+            result_data = resp.json()
+            if "error" in result_data:
+                raise Exception(f"Failed to check token balance: {result_data['error']}")
+
+            balance_hex = result_data["result"]
+            balance = int(balance_hex, 16)
+
+            result = {
+                "chainId": chain_id,
+                "wallet": target_wallet,
+                "assetType": "erc20",
+                "token": token_address,
+                "balance": str(balance),
+                "balanceHex": balance_hex,
+            }
+        else:
+            # Native balance (ETH/MATIC/...)
+            resp = client.post(rpc_url, json={
+                "jsonrpc": "2.0",
+                "method": "eth_getBalance",
+                "params": [target_wallet, "latest"],
+                "id": 1,
+            })
+            result_data = resp.json()
+            if "error" in result_data:
+                raise Exception(f"Failed to check native balance: {result_data['error']}")
+
+            balance_hex = result_data["result"]
+            balance = int(balance_hex, 16)
+
+            result = {
+                "chainId": chain_id,
+                "wallet": target_wallet,
+                "assetType": "native",
+                "balance": str(balance),
+                "balanceHex": balance_hex,
+            }
+
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return result
 
 
 def cmd_allowance(chain_id: str, token_address: str, spender: str) -> dict:
@@ -306,7 +386,12 @@ def cmd_allowance(chain_id: str, token_address: str, spender: str) -> dict:
     config = get_config()
     rpc_url = config.rpc_urls.get(chain_id)
     if not rpc_url:
-        raise Exception(f"No RPC URL configured for chain {chain_id}. Set RPC_URL_{chain_id} env var.")
+        raise Exception(
+            f"No RPC URL configured for chain {chain_id}. "
+            "Set chain-name env vars (preferred): "
+            "RPC_URL_POLYGON / RPC_URL_ETHEREUM / RPC_URL_ARBITRUM / RPC_URL_BASE. "
+            f"Legacy RPC_URL_{chain_id} is also supported."
+        )
     
     owner = get_wallet_address()
     
@@ -353,7 +438,12 @@ def cmd_approve(chain_id: str, token_address: str, spender: str, amount: str = N
     config = get_config()
     rpc_url = config.rpc_urls.get(chain_id)
     if not rpc_url:
-        raise Exception(f"No RPC URL configured for chain {chain_id}. Set RPC_URL_{chain_id} env var.")
+        raise Exception(
+            f"No RPC URL configured for chain {chain_id}. "
+            "Set chain-name env vars (preferred): "
+            "RPC_URL_POLYGON / RPC_URL_ETHEREUM / RPC_URL_ARBITRUM / RPC_URL_BASE. "
+            f"Legacy RPC_URL_{chain_id} is also supported."
+        )
     
     account = Account.from_key(config.wallet_private_key)
     
@@ -564,6 +654,14 @@ def main():
         
         elif command == "wallet":
             cmd_wallet()
+
+        elif command == "balance":
+            if len(args) < 1:
+                print("Usage: balance <chain_id> [token_address] [wallet]")
+                sys.exit(1)
+            token_address = args[1] if len(args) > 1 else None
+            wallet = args[2] if len(args) > 2 else None
+            cmd_balance(args[0], token_address, wallet)
         
         elif command == "execute":
             if len(args) < 3:
